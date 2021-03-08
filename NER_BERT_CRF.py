@@ -184,8 +184,8 @@ class DataProcessor(object):
                     ner_labels.append(pieces[-1])
                 # sentence = ' '.join(words)
                 # ner_seq = ' '.join(ner_labels)
-                # pos_tag_seq = ' '.join(pos_tags) 
-                # bio_pos_tag_seq = ' '.join(bio_pos_tags) 
+                # pos_tag_seq = ' '.join(pos_tags)
+                # bio_pos_tag_seq = ' '.join(bio_pos_tags)
                 # out_lines.append([sentence, pos_tag_seq, bio_pos_tag_seq, ner_seq])
                 # out_lines.append([sentence, ner_seq])
                 out_lists.append([words,pos_tags,bio_pos_tags,ner_labels])
@@ -223,7 +223,7 @@ class CoNLLDataProcessor(DataProcessor):
 
     def get_label_map(self):
         return self._label_map
-    
+
     def get_start_label_id(self):
         return self._label_map['[CLS]']
 
@@ -335,7 +335,7 @@ def f1_score(y_true, y_pred):
     0,1,2,3 are [CLS],[SEP],[X],O
     '''
     ignore_id=3
-    
+
     num_proposed = len(y_pred[y_pred>ignore_id])
     num_correct = (np.logical_and(y_true==y_pred, y_true>ignore_id)).sum()
     num_gold = len(y_true[y_true>ignore_id])
@@ -423,7 +423,7 @@ if load_checkpoint and os.path.exists(output_dir+'/ner_bert_checkpoint.pt'):
     valid_f1_prev = checkpoint['valid_f1']
     model = BertForTokenClassification.from_pretrained(
         bert_model_scale, state_dict=checkpoint['model_state'], num_labels=len(label_list))
-    print('Loaded the pretrain NER_BERT model, epoch:',checkpoint['epoch'],'valid acc:', 
+    print('Loaded the pretrain NER_BERT model, epoch:',checkpoint['epoch'],'valid acc:',
             checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 else:
     start_epoch = 0
@@ -489,7 +489,7 @@ for epoch in range(start_epoch, total_train_epochs):
     # for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
     for step, batch in enumerate(train_dataloader):
         batch = tuple(t.to(device) for t in batch)
-        
+
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
         loss = model(input_ids, segment_ids, input_mask, label_ids)
 
@@ -507,14 +507,11 @@ for epoch in range(start_epoch, total_train_epochs):
             optimizer.step()
             optimizer.zero_grad()
             global_step_th += 1
-          
+
         print("Epoch:{}-{}/{}, CrossEntropyLoss: {} ".format(epoch, step, len(train_dataloader), loss.item()))
-    
+
     print('--------------------------------------------------------------')
-    print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss, (time.time() - 
-                                                                                             
-                                                                                             
-                                                                                             )/60.0))
+    print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss, (time.time() - train_start) / 60.0))
     valid_acc, valid_f1 = evaluate(model, dev_dataloader, batch_size, epoch, 'Valid_set')
     # Save a checkpoint
     if valid_f1 > valid_f1_prev:
@@ -578,7 +575,7 @@ class BERT_CRF_NER(nn.Module):
         self.batch_size = batch_size
         self.device=device
 
-        # use pretrainded BertModel 
+        # use pretrainded BertModel
         self.bert = bert_model
         self.dropout = torch.nn.Dropout(0.2)
         # Maps the output of the bert into label space.
@@ -601,7 +598,7 @@ class BERT_CRF_NER(nn.Module):
     def init_bert_weights(self, module):
         """ Initialize the weights.
         """
-        if isinstance(module, (nn.Linear, nn.Embedding)): 
+        if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
             module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
@@ -613,19 +610,19 @@ class BERT_CRF_NER(nn.Module):
 
     def _forward_alg(self, feats):
         '''
-        this also called alpha-recursion or forward recursion, to calculate log_prob of all barX 
+        this also called alpha-recursion or forward recursion, to calculate log_prob of all barX
         '''
-        
+
         # T = self.max_seq_length
         T = feats.shape[1]
         batch_size = feats.shape[0]
-        
+
         # alpha_recursion,forward, alpha(zt)=p(zt,bar_x_1:t)
         log_alpha = torch.Tensor(batch_size, 1, self.num_labels).fill_(-10000.).to(self.device)
         # normal_alpha_0 : alpha[0]=Ot[0]*self.PIs
         # self.start_label has all of the score. it is log,0 is p=1
         log_alpha[:, 0, self.start_label_id] = 0
-        
+
         # feats: sentances -> word embedding -> lstm -> MLP -> feats
         # feats is the probability of emission, feat.shape=(1,tag_size)
         for t in range(1, T):
@@ -645,11 +642,11 @@ class BERT_CRF_NER(nn.Module):
         return bert_feats
 
     def _score_sentence(self, feats, label_ids):
-        ''' 
+        '''
         Gives the score of a provided label sequence
         p(X=w1:t,Zt=tag1:t)=...p(Zt=tag_t|Zt-1=tag_t-1)p(xt|Zt=tag_t)...
         '''
-        
+
         # T = self.max_seq_length
         T = feats.shape[1]
         batch_size = feats.shape[0]
@@ -669,7 +666,7 @@ class BERT_CRF_NER(nn.Module):
         '''
         Max-Product Algorithm or viterbi algorithm, argmax(p(z_0:t|x_0:t))
         '''
-        
+
         # T = self.max_seq_length
         T = feats.shape[1]
         batch_size = feats.shape[0]
@@ -678,7 +675,7 @@ class BERT_CRF_NER(nn.Module):
 
         log_delta = torch.Tensor(batch_size, 1, self.num_labels).fill_(-10000.).to(self.device)
         log_delta[:, 0, self.start_label_id] = 0
-        
+
         # psi is for the vaule of the last latent that make P(this_latent) maximum.
         psi = torch.zeros((batch_size, T, self.num_labels), dtype=torch.long).to(self.device)  # psi[0]=0000 useless
         for t in range(1, T):
@@ -737,7 +734,7 @@ if load_checkpoint and os.path.exists(output_dir+'/ner_bert_crf_checkpoint.pt'):
     pretrained_dict_selected = {k: v for k, v in pretrained_dict.items() if k in net_state_dict}
     net_state_dict.update(pretrained_dict_selected)
     model.load_state_dict(net_state_dict)
-    print('Loaded the pretrain NER_BERT_CRF model, epoch:',checkpoint['epoch'],'valid acc:', 
+    print('Loaded the pretrain NER_BERT_CRF model, epoch:',checkpoint['epoch'],'valid acc:',
             checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 else:
     start_epoch = 0
@@ -832,9 +829,9 @@ for epoch in range(start_epoch, total_train_epochs):
             optimizer.step()
             optimizer.zero_grad()
             global_step_th += 1
-            
+
         print("Epoch:{}-{}/{}, Negative loglikelihood: {} ".format(epoch, step, len(train_dataloader), neg_log_likelihood.item()))
-    
+
     print('--------------------------------------------------------------')
     print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss, (time.time() - train_start)/60.0))
     valid_acc, valid_f1 = evaluate(model, dev_dataloader, batch_size, epoch, 'Valid_set')
@@ -863,7 +860,7 @@ net_state_dict = model.state_dict()
 pretrained_dict_selected = {k: v for k, v in pretrained_dict.items() if k in net_state_dict}
 net_state_dict.update(pretrained_dict_selected)
 model.load_state_dict(net_state_dict)
-print('Loaded the pretrain  NER_BERT_CRF  model, epoch:',checkpoint['epoch'],'valid acc:', 
+print('Loaded the pretrain  NER_BERT_CRF  model, epoch:',checkpoint['epoch'],'valid acc:',
       checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 
 model.to(device)
