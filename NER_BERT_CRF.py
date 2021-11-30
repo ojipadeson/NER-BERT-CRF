@@ -167,7 +167,7 @@ for epoch in range(start_epoch, total_train_epochs):
     print('--------------------------------------------------------------')
     print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss,
                                                                              (time.time() - train_start) / 60.0))
-    valid_acc, valid_f1 = evaluate(model, dev_dataloader, batch_size, epoch, 'Valid_set')
+    valid_acc, valid_f1 = evaluate(model, dev_dataloader, batch_size, epoch, 'Valid_set', use_crf=True)
 
     if valid_f1 > valid_f1_prev:
         torch.save({'epoch': epoch, 'model_state': model.state_dict(), 'valid_acc': valid_acc,
@@ -175,7 +175,7 @@ for epoch in range(start_epoch, total_train_epochs):
                    os.path.join(output_dir, 'ner_bert_crf_checkpoint.pt'))
         valid_f1_prev = valid_f1
 
-evaluate(model, test_dataloader, batch_size, total_train_epochs - 1, 'Test_set')
+evaluate(model, test_dataloader, batch_size, total_train_epochs - 1, 'Test_set', use_crf=True)
 
 checkpoint = torch.load(output_dir + '/ner_bert_crf_checkpoint.pt', map_location='cpu')
 epoch = checkpoint['epoch']
@@ -190,7 +190,7 @@ print('Loaded the pretrain  NER_BERT_CRF  model, epoch:', checkpoint['epoch'], '
       checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 
 model.to(device)
-evaluate(model, test_dataloader, batch_size, epoch, 'Test_set')
+evaluate(model, test_dataloader, batch_size, epoch, 'Test_set', use_crf=True)
 
 model.eval()
 with torch.no_grad():
