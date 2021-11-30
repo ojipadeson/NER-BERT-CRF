@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 from torch.utils import data
 
-from pytorch_pretrained_bert.modeling import BertModel, BertForTokenClassification
+from pytorch_pretrained_bert.modeling import BertModel
 from pytorch_pretrained_bert.optimization import BertAdam
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
@@ -120,14 +120,14 @@ param_optimizer = list(model.named_parameters())
 no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
 new_param = ['transitions', 'hidden2label.weight', 'hidden2label.bias']
 optimizer_grouped_parameters = [
-    {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay) \
+    {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)
                 and not any(nd in n for nd in new_param)], 'weight_decay': weight_decay_finetune},
-    {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay) \
+    {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)
                 and not any(nd in n for nd in new_param)], 'weight_decay': 0.0},
-    {'params': [p for n, p in param_optimizer if n in ('transitions', 'hidden2label.weight')] \
-        , 'lr': lr0_crf_fc, 'weight_decay': weight_decay_crf_fc},
-    {'params': [p for n, p in param_optimizer if n == 'hidden2label.bias'] \
-        , 'lr': lr0_crf_fc, 'weight_decay': 0.0}
+    {'params': [p for n, p in param_optimizer if n in ('transitions', 'hidden2label.weight')],
+     'lr': lr0_crf_fc, 'weight_decay': weight_decay_crf_fc},
+    {'params': [p for n, p in param_optimizer if n == 'hidden2label.bias'],
+     'lr': lr0_crf_fc, 'weight_decay': 0.0}
 ]
 optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=warmup_proportion,
                      t_total=total_train_steps)
