@@ -70,7 +70,7 @@ def get_data_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
 print('Python version ', sys.version)
 print('PyTorch version ', torch.__version__)
 
-set_work_dir()
+# set_work_dir()
 print('Current dir:', os.getcwd())
 
 cuda_yes = torch.cuda.is_available()
@@ -79,7 +79,8 @@ print('Cuda is available?', cuda_yes)
 device = torch.device("cuda:0" if cuda_yes else "cpu")
 print('Device:', device)
 
-data_dir = os.path.join(get_data_dir(), 'NER_data/CoNLL2003/')
+# data_dir = os.path.join(get_data_dir(), 'NER_data/CoNLL2003/')
+data_dir = os.path.join('NER_data/CoNLL2003/')
 # "Whether to run training."
 do_train = True
 # "Whether to run eval on the dev set."
