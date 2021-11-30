@@ -20,6 +20,7 @@
 # %%
 import sys
 import os
+import platform
 import time
 import importlib
 import numpy as np
@@ -41,22 +42,29 @@ import pickle
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
+
 def set_work_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
-    if (os.path.exists(os.getenv("HOME")+'/'+local_path)):
-        os.chdir(os.getenv("HOME")+'/'+local_path)
-    elif (os.path.exists(os.getenv("HOME")+'/'+server_path)):
-        os.chdir(os.getenv("HOME")+'/'+server_path)
+    if sys.platform == 'linux' or sys.platform == 'linux2':
+        if os.path.exists(os.getenv("HOMEPATH") + '/' + local_path):
+            os.chdir(os.getenv("HOMEPATH") + '/' + local_path)
+        elif os.path.exists(os.getenv("HOMEPATH") + '/' + server_path):
+            os.chdir(os.getenv("HOMEPATH") + '/' + server_path)
+        else:
+            raise Exception('Set work path error!')
     else:
-        raise Exception('Set work path error!')
+        os.chdir('C:\\FUDAN\\Grade4_1\\NLP\\Lab2\\ner_bert_crf')
 
 
 def get_data_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
-    if (os.path.exists(os.getenv("HOME")+'/'+local_path)):
-        return os.getenv("HOME")+'/'+local_path
-    elif (os.path.exists(os.getenv("HOME")+'/'+server_path)):
-        return os.getenv("HOME")+'/'+server_path
+    if sys.platform == 'linux' or sys.platform == 'linux2':
+        if os.path.exists(os.getenv("HOMEPATH") + '/' + local_path):
+            return os.getenv("HOMEPATH") + '/' + local_path
+        elif os.path.exists(os.getenv("HOMEPATH") + '/' + server_path):
+            return os.getenv("HOMEPATH") + '/' + server_path
+        else:
+            raise Exception('get data path error!')
     else:
-        raise Exception('get data path error!')
+        return 'C:\\FUDAN\\Grade4_1\\NLP\\Lab2\\ner_bert_crf'
 
 
 print('Python version ', sys.version)
@@ -81,13 +89,13 @@ do_predict = True
 # Whether load checkpoint file before train model
 load_checkpoint = True
 # "The vocabulary file that the BERT model was trained on."
-max_seq_length = 180 #256
-batch_size = 32 #32
+max_seq_length = 180  # 256
+batch_size = 32  # 32
 # "The initial learning rate for Adam."
 learning_rate0 = 5e-5
 lr0_crf_fc = 8e-5
-weight_decay_finetune = 1e-5 #0.01
-weight_decay_crf_fc = 5e-6 #0.005
+weight_decay_finetune = 1e-5  # 0.01
+weight_decay_crf_fc = 5e-6  # 0.005
 total_train_epochs = 15
 gradient_accumulation_steps = 1
 warmup_proportion = 0.1
@@ -109,6 +117,7 @@ do_lower_case = False
 '''
 Functions and Classes for read and organize data set
 '''
+
 
 class InputExample(object):
     """A single training/test example for NER."""
@@ -134,7 +143,7 @@ class InputFeatures(object):
     result of convert_examples_to_features(InputExample)
     """
 
-    def __init__(self, input_ids, input_mask, segment_ids,  predict_mask, label_ids):
+    def __init__(self, input_ids, input_mask, segment_ids, predict_mask, label_ids):
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.segment_ids = segment_ids
@@ -188,7 +197,7 @@ class DataProcessor(object):
                 # bio_pos_tag_seq = ' '.join(bio_pos_tags)
                 # out_lines.append([sentence, pos_tag_seq, bio_pos_tag_seq, ner_seq])
                 # out_lines.append([sentence, ner_seq])
-                out_lists.append([words,pos_tags,bio_pos_tags,ner_labels])
+                out_lists.append([words, pos_tags, bio_pos_tags, ner_labels])
         return out_lists
 
 
@@ -198,10 +207,11 @@ class CoNLLDataProcessor(DataProcessor):
     '''
 
     def __init__(self):
-        self._label_types = [ 'X', '[CLS]', '[SEP]', 'O', 'I-LOC', 'B-PER', 'I-PER', 'I-ORG', 'I-MISC', 'B-MISC', 'B-LOC', 'B-ORG']
+        self._label_types = ['X', '[CLS]', '[SEP]', 'O', 'I-LOC', 'B-PER', 'I-PER', 'I-ORG', 'I-MISC', 'B-MISC',
+                             'B-LOC', 'B-ORG']
         self._num_labels = len(self._label_types)
         self._label_map = {label: i for i,
-                           label in enumerate(self._label_types)}
+                                        label in enumerate(self._label_types)}
 
     def get_train_examples(self, data_dir):
         return self._create_examples(
@@ -252,7 +262,6 @@ class CoNLLDataProcessor(DataProcessor):
 
 
 def example2feature(example, tokenizer, label_map, max_seq_length):
-
     add_label = 'X'
     # tokenize_count = []
     tokens = ['[CLS]']
@@ -278,7 +287,8 @@ def example2feature(example, tokenizer, label_map, max_seq_length):
 
     # truncate
     if len(tokens) > max_seq_length - 1:
-        print('Example No.{} is too long, length is {}, truncated to {}!'.format(example.guid, len(tokens), max_seq_length))
+        print('Example No.{} is too long, length is {}, truncated to {}!'.format(example.guid, len(tokens),
+                                                                                 max_seq_length))
         tokens = tokens[0:(max_seq_length - 1)]
         predict_mask = predict_mask[0:(max_seq_length - 1)]
         label_ids = label_ids[0:(max_seq_length - 1)]
@@ -290,38 +300,38 @@ def example2feature(example, tokenizer, label_map, max_seq_length):
     segment_ids = [0] * len(input_ids)
     input_mask = [1] * len(input_ids)
 
-    feat=InputFeatures(
-                # guid=example.guid,
-                # tokens=tokens,
-                input_ids=input_ids,
-                input_mask=input_mask,
-                segment_ids=segment_ids,
-                predict_mask=predict_mask,
-                label_ids=label_ids)
+    feat = InputFeatures(
+        # guid=example.guid,
+        # tokens=tokens,
+        input_ids=input_ids,
+        input_mask=input_mask,
+        segment_ids=segment_ids,
+        predict_mask=predict_mask,
+        label_ids=label_ids)
 
     return feat
 
+
 class NerDataset(data.Dataset):
     def __init__(self, examples, tokenizer, label_map, max_seq_length):
-        self.examples=examples
-        self.tokenizer=tokenizer
-        self.label_map=label_map
-        self.max_seq_length=max_seq_length
+        self.examples = examples
+        self.tokenizer = tokenizer
+        self.label_map = label_map
+        self.max_seq_length = max_seq_length
 
     def __len__(self):
         return len(self.examples)
 
     def __getitem__(self, idx):
-        feat=example2feature(self.examples[idx], self.tokenizer, self.label_map, max_seq_length)
+        feat = example2feature(self.examples[idx], self.tokenizer, self.label_map, max_seq_length)
         return feat.input_ids, feat.input_mask, feat.segment_ids, feat.predict_mask, feat.label_ids
 
     @classmethod
     def pad(cls, batch):
-
         seqlen_list = [len(sample[0]) for sample in batch]
         maxlen = np.array(seqlen_list).max()
 
-        f = lambda x, seqlen: [sample[x] + [0] * (seqlen - len(sample[x])) for sample in batch] # 0: X for padding
+        f = lambda x, seqlen: [sample[x] + [0] * (seqlen - len(sample[x])) for sample in batch]  # 0: X for padding
         input_ids_list = torch.LongTensor(f(0, maxlen))
         input_mask_list = torch.LongTensor(f(1, maxlen))
         segment_ids_list = torch.LongTensor(f(2, maxlen))
@@ -330,15 +340,16 @@ class NerDataset(data.Dataset):
 
         return input_ids_list, input_mask_list, segment_ids_list, predict_mask_list, label_ids_list
 
+
 def f1_score(y_true, y_pred):
     '''
     0,1,2,3 are [CLS],[SEP],[X],O
     '''
-    ignore_id=3
+    ignore_id = 3
 
-    num_proposed = len(y_pred[y_pred>ignore_id])
-    num_correct = (np.logical_and(y_true==y_pred, y_true>ignore_id)).sum()
-    num_gold = len(y_true[y_true>ignore_id])
+    num_proposed = len(y_pred[y_pred > ignore_id])
+    num_correct = (np.logical_and(y_true == y_pred, y_true > ignore_id)).sum()
+    num_gold = len(y_true[y_true > ignore_id])
 
     try:
         precision = num_correct / num_proposed
@@ -351,16 +362,17 @@ def f1_score(y_true, y_pred):
         recall = 1.0
 
     try:
-        f1 = 2*precision*recall / (precision + recall)
+        f1 = 2 * precision * recall / (precision + recall)
     except ZeroDivisionError:
-        if precision*recall==0:
-            f1=1.0
+        if precision * recall == 0:
+            f1 = 1.0
         else:
-            f1=0
+            f1 = 0
 
     return precision, recall, f1
 
-#%%
+
+# %%
 '''
 Prepare data set
 '''
@@ -381,50 +393,50 @@ test_examples = conllProcessor.get_test_examples(data_dir)
 total_train_steps = int(len(train_examples) / batch_size / gradient_accumulation_steps * total_train_epochs)
 
 print("***** Running training *****")
-print("  Num examples = %d"% len(train_examples))
-print("  Batch size = %d"% batch_size)
-print("  Num steps = %d"% total_train_steps)
+print("  Num examples = %d" % len(train_examples))
+print("  Batch size = %d" % batch_size)
+print("  Num steps = %d" % total_train_steps)
 
 tokenizer = BertTokenizer.from_pretrained(bert_model_scale, do_lower_case=do_lower_case)
 
-train_dataset = NerDataset(train_examples,tokenizer,label_map,max_seq_length)
-dev_dataset = NerDataset(dev_examples,tokenizer,label_map,max_seq_length)
-test_dataset = NerDataset(test_examples,tokenizer,label_map,max_seq_length)
+train_dataset = NerDataset(train_examples, tokenizer, label_map, max_seq_length)
+dev_dataset = NerDataset(dev_examples, tokenizer, label_map, max_seq_length)
+test_dataset = NerDataset(test_examples, tokenizer, label_map, max_seq_length)
 
+num_worker = 4 if sys.platform == 'linux' or sys.platform == 'linux2' else 0
 train_dataloader = data.DataLoader(dataset=train_dataset,
-                                batch_size=batch_size,
-                                shuffle=True,
-                                num_workers=4,
-                                collate_fn=NerDataset.pad)
+                                   batch_size=batch_size,
+                                   shuffle=True,
+                                   num_workers=num_worker,
+                                   collate_fn=NerDataset.pad)
 
 dev_dataloader = data.DataLoader(dataset=dev_dataset,
-                                batch_size=batch_size,
-                                shuffle=False,
-                                num_workers=4,
-                                collate_fn=NerDataset.pad)
+                                 batch_size=batch_size,
+                                 shuffle=False,
+                                 num_workers=num_worker,
+                                 collate_fn=NerDataset.pad)
 
 test_dataloader = data.DataLoader(dataset=test_dataset,
-                                batch_size=batch_size,
-                                shuffle=False,
-                                num_workers=4,
-                                collate_fn=NerDataset.pad)
+                                  batch_size=batch_size,
+                                  shuffle=False,
+                                  num_workers=num_worker,
+                                  collate_fn=NerDataset.pad)
 
-
-#%%
+# %%
 '''
 #####  Use only BertForTokenClassification  #####
 '''
 print('*** Use only BertForTokenClassification ***')
 
-if load_checkpoint and os.path.exists(output_dir+'/ner_bert_checkpoint.pt'):
-    checkpoint = torch.load(output_dir+'/ner_bert_checkpoint.pt', map_location='cpu')
-    start_epoch = checkpoint['epoch']+1
+if load_checkpoint and os.path.exists(output_dir + '/ner_bert_checkpoint.pt'):
+    checkpoint = torch.load(output_dir + '/ner_bert_checkpoint.pt', map_location='cpu')
+    start_epoch = checkpoint['epoch'] + 1
     valid_acc_prev = checkpoint['valid_acc']
     valid_f1_prev = checkpoint['valid_f1']
     model = BertForTokenClassification.from_pretrained(
         bert_model_scale, state_dict=checkpoint['model_state'], num_labels=len(label_list))
-    print('Loaded the pretrain NER_BERT model, epoch:',checkpoint['epoch'],'valid acc:',
-            checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
+    print('Loaded the pretrain NER_BERT model, epoch:', checkpoint['epoch'], 'valid acc:',
+          checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 else:
     start_epoch = 0
     valid_acc_prev = 0
@@ -438,10 +450,14 @@ model.to(device)
 named_params = list(model.named_parameters())
 no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
 optimizer_grouped_parameters = [
-    {'params': [p for n, p in named_params if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay_finetune},
+    {'params': [p for n, p in named_params if not any(nd in n for nd in no_decay)],
+     'weight_decay': weight_decay_finetune},
     {'params': [p for n, p in named_params if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
 ]
-optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=warmup_proportion, t_total=total_train_steps)
+optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=warmup_proportion,
+                     t_total=total_train_steps)
+
+
 # optimizer = optim.Adam(model.parameters(), lr=learning_rate0)
 
 def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name):
@@ -449,8 +465,8 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name):
     model.eval()
     all_preds = []
     all_labels = []
-    total=0
-    correct=0
+    total = 0
+    correct = 0
     start = time.time()
     with torch.no_grad():
         for batch in predict_dataloader:
@@ -467,16 +483,16 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name):
             total += len(valid_label_ids)
             correct += valid_predicted.eq(valid_label_ids).sum().item()
 
-    test_acc = correct/total
+    test_acc = correct / total
     precision, recall, f1 = f1_score(np.array(all_labels), np.array(all_preds))
     end = time.time()
     print('Epoch:%d, Acc:%.2f, Precision: %.2f, Recall: %.2f, F1: %.2f on %s, Spend: %.3f minutes for evaluation' \
-        % (epoch_th, 100.*test_acc, 100.*precision, 100.*recall, 100.*f1, dataset_name,(end-start)/60.0))
+          % (epoch_th, 100. * test_acc, 100. * precision, 100. * recall, 100. * f1, dataset_name, (end - start) / 60.0))
     print('--------------------------------------------------------------')
     return test_acc, f1
 
 
-#%%
+# %%
 # train procedure using only BertForTokenClassification
 # train_start = time.time()
 global_step_th = int(len(train_examples) / batch_size / gradient_accumulation_steps * start_epoch)
@@ -501,7 +517,7 @@ for epoch in range(start_epoch, total_train_epochs):
 
         if (step + 1) % gradient_accumulation_steps == 0:
             # modify learning rate with special warm up BERT uses
-            lr_this_step = learning_rate0 * warmup_linear(global_step_th/total_train_steps, warmup_proportion)
+            lr_this_step = learning_rate0 * warmup_linear(global_step_th / total_train_steps, warmup_proportion)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr_this_step
             optimizer.step()
@@ -511,23 +527,24 @@ for epoch in range(start_epoch, total_train_epochs):
         print("Epoch:{}-{}/{}, CrossEntropyLoss: {} ".format(epoch, step, len(train_dataloader), loss.item()))
 
     print('--------------------------------------------------------------')
-    print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss, (time.time() - train_start) / 60.0))
+    print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss,
+                                                                             (time.time() - train_start) / 60.0))
     valid_acc, valid_f1 = evaluate(model, dev_dataloader, batch_size, epoch, 'Valid_set')
     # Save a checkpoint
     if valid_f1 > valid_f1_prev:
         # model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
         torch.save({'epoch': epoch, 'model_state': model.state_dict(), 'valid_acc': valid_acc,
-            'valid_f1': valid_f1, 'max_seq_length': max_seq_length, 'lower_case': do_lower_case},
-                    os.path.join(output_dir, 'ner_bert_checkpoint.pt'))
+                    'valid_f1': valid_f1, 'max_seq_length': max_seq_length, 'lower_case': do_lower_case},
+                   os.path.join(output_dir, 'ner_bert_checkpoint.pt'))
         valid_f1_prev = valid_f1
 
-evaluate(model, test_dataloader, batch_size, total_train_epochs-1, 'Test_set')
+evaluate(model, test_dataloader, batch_size, total_train_epochs - 1, 'Test_set')
 
-#%%
+# %%
 '''
 Test_set prediction using the best epoch of NER_BERT model
 '''
-checkpoint = torch.load(output_dir+'/ner_bert_checkpoint.pt', map_location='cpu')
+checkpoint = torch.load(output_dir + '/ner_bert_checkpoint.pt', map_location='cpu')
 epoch = checkpoint['epoch']
 valid_acc_prev = checkpoint['valid_acc']
 valid_f1_prev = checkpoint['valid_f1']
@@ -535,15 +552,14 @@ model = BertForTokenClassification.from_pretrained(
     bert_model_scale, state_dict=checkpoint['model_state'], num_labels=len(label_list))
 # if os.path.exists(output_dir+'/ner_bert_crf_checkpoint.pt'):
 model.to(device)
-print('Loaded the pretrain NER_BERT model, epoch:',checkpoint['epoch'],'valid acc:', 
-        checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
+print('Loaded the pretrain NER_BERT model, epoch:', checkpoint['epoch'], 'valid acc:',
+      checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 
 model.to(device)
 # evaluate(model, train_dataloader, batch_size, total_train_epochs-1, 'Train_set')
 evaluate(model, test_dataloader, batch_size, epoch, 'Test_set')
 
-
-#%%
+# %%
 '''
 #####  Use BertModel + CRF  #####
 CRF is for transition and the maximum likelyhood estimate(MLE).
@@ -551,16 +567,20 @@ Bert is for latent label -> Emission of word embedding.
 '''
 print('*** Use BertModel + CRF ***')
 
+
 def log_sum_exp_1vec(vec):  # shape(1,m)
     max_score = vec[0, np.argmax(vec)]
     max_score_broadcast = max_score.view(1, -1).expand(1, vec.size()[1])
     return max_score + torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
 
-def log_sum_exp_mat(log_M, axis=-1):  # shape(n,m)
-    return torch.max(log_M, axis)[0]+torch.log(torch.exp(log_M-torch.max(log_M, axis)[0][:, None]).sum(axis))
 
-def log_sum_exp_batch(log_Tensor, axis=-1): # shape (batch_size,n,m)
-    return torch.max(log_Tensor, axis)[0]+torch.log(torch.exp(log_Tensor-torch.max(log_Tensor, axis)[0].view(log_Tensor.shape[0],-1,1)).sum(axis))
+def log_sum_exp_mat(log_M, axis=-1):  # shape(n,m)
+    return torch.max(log_M, axis)[0] + torch.log(torch.exp(log_M - torch.max(log_M, axis)[0][:, None]).sum(axis))
+
+
+def log_sum_exp_batch(log_Tensor, axis=-1):  # shape (batch_size,n,m)
+    return torch.max(log_Tensor, axis)[0] + torch.log(
+        torch.exp(log_Tensor - torch.max(log_Tensor, axis)[0].view(log_Tensor.shape[0], -1, 1)).sum(axis))
 
 
 class BERT_CRF_NER(nn.Module):
@@ -573,7 +593,7 @@ class BERT_CRF_NER(nn.Module):
         self.num_labels = num_labels
         # self.max_seq_length = max_seq_length
         self.batch_size = batch_size
-        self.device=device
+        self.device = device
 
         # use pretrainded BertModel
         self.bert = bert_model
@@ -636,7 +656,8 @@ class BERT_CRF_NER(nn.Module):
         '''
         sentances -> word embedding -> lstm -> MLP -> feats
         '''
-        bert_seq_out, _ = self.bert(input_ids, token_type_ids=segment_ids, attention_mask=input_mask, output_all_encoded_layers=False)
+        bert_seq_out, _ = self.bert(input_ids, token_type_ids=segment_ids, attention_mask=input_mask,
+                                    output_all_encoded_layers=False)
         bert_seq_out = self.dropout(bert_seq_out)
         bert_feats = self.hidden2label(bert_seq_out)
         return bert_feats
@@ -651,15 +672,15 @@ class BERT_CRF_NER(nn.Module):
         T = feats.shape[1]
         batch_size = feats.shape[0]
 
-        batch_transitions = self.transitions.expand(batch_size,self.num_labels,self.num_labels)
+        batch_transitions = self.transitions.expand(batch_size, self.num_labels, self.num_labels)
         batch_transitions = batch_transitions.flatten(1)
 
-        score = torch.zeros((feats.shape[0],1)).to(device)
+        score = torch.zeros((feats.shape[0], 1)).to(device)
         # the 0th node is start_label->start_word,the probability of them=1. so t begin with 1.
         for t in range(1, T):
             score = score + \
-                batch_transitions.gather(-1, (label_ids[:, t]*self.num_labels+label_ids[:, t-1]).view(-1,1)) \
-                    + feats[:, t].gather(-1, label_ids[:, t].view(-1,1)).view(-1,1)
+                    batch_transitions.gather(-1, (label_ids[:, t] * self.num_labels + label_ids[:, t - 1]).view(-1, 1)) \
+                    + feats[:, t].gather(-1, label_ids[:, t].view(-1, 1)).view(-1, 1)
         return score
 
     def _viterbi_decode(self, feats):
@@ -692,9 +713,9 @@ class BERT_CRF_NER(nn.Module):
         # max p(z1:t,all_x|theta)
         max_logLL_allz_allx, path[:, -1] = torch.max(log_delta.squeeze(), -1)
 
-        for t in range(T-2, -1, -1):
+        for t in range(T - 2, -1, -1):
             # choose the state of z_t according the state choosed of z_t+1.
-            path[:, t] = psi[:, t+1].gather(-1,path[:, t+1].view(-1,1)).squeeze()
+            path[:, t] = psi[:, t + 1].gather(-1, path[:, t + 1].view(-1, 1)).squeeze()
 
         return max_logLL_allz_allx, path
 
@@ -723,19 +744,19 @@ stop_label_id = conllProcessor.get_stop_label_id()
 bert_model = BertModel.from_pretrained(bert_model_scale)
 model = BERT_CRF_NER(bert_model, start_label_id, stop_label_id, len(label_list), max_seq_length, batch_size, device)
 
-#%%
-if load_checkpoint and os.path.exists(output_dir+'/ner_bert_crf_checkpoint.pt'):
-    checkpoint = torch.load(output_dir+'/ner_bert_crf_checkpoint.pt', map_location='cpu')
-    start_epoch = checkpoint['epoch']+1
+# %%
+if load_checkpoint and os.path.exists(output_dir + '/ner_bert_crf_checkpoint.pt'):
+    checkpoint = torch.load(output_dir + '/ner_bert_crf_checkpoint.pt', map_location='cpu')
+    start_epoch = checkpoint['epoch'] + 1
     valid_acc_prev = checkpoint['valid_acc']
     valid_f1_prev = checkpoint['valid_f1']
-    pretrained_dict=checkpoint['model_state']
+    pretrained_dict = checkpoint['model_state']
     net_state_dict = model.state_dict()
     pretrained_dict_selected = {k: v for k, v in pretrained_dict.items() if k in net_state_dict}
     net_state_dict.update(pretrained_dict_selected)
     model.load_state_dict(net_state_dict)
-    print('Loaded the pretrain NER_BERT_CRF model, epoch:',checkpoint['epoch'],'valid acc:',
-            checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
+    print('Loaded the pretrain NER_BERT_CRF model, epoch:', checkpoint['epoch'], 'valid acc:',
+          checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 else:
     start_epoch = 0
     valid_acc_prev = 0
@@ -750,29 +771,33 @@ no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
 new_param = ['transitions', 'hidden2label.weight', 'hidden2label.bias']
 optimizer_grouped_parameters = [
     {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay) \
-        and not any(nd in n for nd in new_param)], 'weight_decay': weight_decay_finetune},
+                and not any(nd in n for nd in new_param)], 'weight_decay': weight_decay_finetune},
     {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay) \
-        and not any(nd in n for nd in new_param)], 'weight_decay': 0.0},
-    {'params': [p for n, p in param_optimizer if n in ('transitions','hidden2label.weight')] \
-        , 'lr':lr0_crf_fc, 'weight_decay': weight_decay_crf_fc},
+                and not any(nd in n for nd in new_param)], 'weight_decay': 0.0},
+    {'params': [p for n, p in param_optimizer if n in ('transitions', 'hidden2label.weight')] \
+        , 'lr': lr0_crf_fc, 'weight_decay': weight_decay_crf_fc},
     {'params': [p for n, p in param_optimizer if n == 'hidden2label.bias'] \
-        , 'lr':lr0_crf_fc, 'weight_decay': 0.0}
+        , 'lr': lr0_crf_fc, 'weight_decay': 0.0}
 ]
-optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=warmup_proportion, t_total=total_train_steps)
+optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=warmup_proportion,
+                     t_total=total_train_steps)
+
+
 # optimizer = optim.Adam(model.parameters(), lr=learning_rate0)
 
 def warmup_linear(x, warmup=0.002):
     if x < warmup:
-        return x/warmup
+        return x / warmup
     return 1.0 - x
+
 
 def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name):
     # print("***** Running prediction *****")
     model.eval()
     all_preds = []
     all_labels = []
-    total=0
-    correct=0
+    total = 0
+    correct = 0
     start = time.time()
     with torch.no_grad():
         for batch in predict_dataloader:
@@ -788,15 +813,16 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name):
             total += len(valid_label_ids)
             correct += valid_predicted.eq(valid_label_ids).sum().item()
 
-    test_acc = correct/total
+    test_acc = correct / total
     precision, recall, f1 = f1_score(np.array(all_labels), np.array(all_preds))
     end = time.time()
     print('Epoch:%d, Acc:%.2f, Precision: %.2f, Recall: %.2f, F1: %.2f on %s, Spend:%.3f minutes for evaluation' \
-        % (epoch_th, 100.*test_acc, 100.*precision, 100.*recall, 100.*f1, dataset_name,(end-start)/60.0))
+          % (epoch_th, 100. * test_acc, 100. * precision, 100. * recall, 100. * f1, dataset_name, (end - start) / 60.0))
     print('--------------------------------------------------------------')
     return test_acc, f1
 
-#%%
+
+# %%
 # train procedure
 global_step_th = int(len(train_examples) / batch_size / gradient_accumulation_steps * start_epoch)
 
@@ -823,60 +849,61 @@ for epoch in range(start_epoch, total_train_epochs):
 
         if (step + 1) % gradient_accumulation_steps == 0:
             # modify learning rate with special warm up BERT uses
-            lr_this_step = learning_rate0 * warmup_linear(global_step_th/total_train_steps, warmup_proportion)
+            lr_this_step = learning_rate0 * warmup_linear(global_step_th / total_train_steps, warmup_proportion)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr_this_step
             optimizer.step()
             optimizer.zero_grad()
             global_step_th += 1
 
-        print("Epoch:{}-{}/{}, Negative loglikelihood: {} ".format(epoch, step, len(train_dataloader), neg_log_likelihood.item()))
+        print("Epoch:{}-{}/{}, Negative loglikelihood: {} ".format(epoch, step, len(train_dataloader),
+                                                                   neg_log_likelihood.item()))
 
     print('--------------------------------------------------------------')
-    print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss, (time.time() - train_start)/60.0))
+    print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss,
+                                                                             (time.time() - train_start) / 60.0))
     valid_acc, valid_f1 = evaluate(model, dev_dataloader, batch_size, epoch, 'Valid_set')
 
     # Save a checkpoint
     if valid_f1 > valid_f1_prev:
         # model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
         torch.save({'epoch': epoch, 'model_state': model.state_dict(), 'valid_acc': valid_acc,
-            'valid_f1': valid_f1, 'max_seq_length': max_seq_length, 'lower_case': do_lower_case},
-                    os.path.join(output_dir, 'ner_bert_crf_checkpoint.pt'))
+                    'valid_f1': valid_f1, 'max_seq_length': max_seq_length, 'lower_case': do_lower_case},
+                   os.path.join(output_dir, 'ner_bert_crf_checkpoint.pt'))
         valid_f1_prev = valid_f1
 
-evaluate(model, test_dataloader, batch_size, total_train_epochs-1, 'Test_set')
+evaluate(model, test_dataloader, batch_size, total_train_epochs - 1, 'Test_set')
 
-
-#%%
+# %%
 '''
 Test_set prediction using the best epoch of NER_BERT_CRF model
 '''
-checkpoint = torch.load(output_dir+'/ner_bert_crf_checkpoint.pt', map_location='cpu')
+checkpoint = torch.load(output_dir + '/ner_bert_crf_checkpoint.pt', map_location='cpu')
 epoch = checkpoint['epoch']
 valid_acc_prev = checkpoint['valid_acc']
 valid_f1_prev = checkpoint['valid_f1']
-pretrained_dict=checkpoint['model_state']
+pretrained_dict = checkpoint['model_state']
 net_state_dict = model.state_dict()
 pretrained_dict_selected = {k: v for k, v in pretrained_dict.items() if k in net_state_dict}
 net_state_dict.update(pretrained_dict_selected)
 model.load_state_dict(net_state_dict)
-print('Loaded the pretrain  NER_BERT_CRF  model, epoch:',checkpoint['epoch'],'valid acc:',
+print('Loaded the pretrain  NER_BERT_CRF  model, epoch:', checkpoint['epoch'], 'valid acc:',
       checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 
 model.to(device)
-#evaluate(model, train_dataloader, batch_size, total_train_epochs-1, 'Train_set')
+# evaluate(model, train_dataloader, batch_size, total_train_epochs-1, 'Train_set')
 evaluate(model, test_dataloader, batch_size, epoch, 'Test_set')
 # print('Total spend:',(time.time()-train_start)/60.0)
 
 
-#%%
+# %%
 model.eval()
 with torch.no_grad():
     demon_dataloader = data.DataLoader(dataset=test_dataset,
-                                batch_size=10,
-                                shuffle=False,
-                                num_workers=4,
-                                collate_fn=pad)
+                                       batch_size=10,
+                                       shuffle=False,
+                                       num_workers=4,
+                                       collate_fn=NerDataset.pad)
     for batch in demon_dataloader:
         batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
@@ -887,11 +914,11 @@ with torch.no_grad():
         for i in range(10):
             print(predicted_label_seq_ids[i])
             print(label_ids[i])
-            new_ids=predicted_label_seq_ids[i].cpu().numpy()[predict_mask[i].cpu().numpy()==1]
+            new_ids = predicted_label_seq_ids[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
             print(list(map(lambda i: label_list[i], new_ids)))
             print(test_examples[i].labels)
         break
-#%%
+# %%
 print(conllProcessor.get_label_map())
 # print(test_examples[8].words)
 # print(test_features[8].label_ids)
