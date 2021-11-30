@@ -45,10 +45,10 @@ from pytorch_pretrained_bert.tokenization import BertTokenizer
 
 def set_work_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
     if sys.platform == 'linux' or sys.platform == 'linux2':
-        if os.path.exists(os.getenv("HOMEPATH") + '/' + local_path):
-            os.chdir(os.getenv("HOMEPATH") + '/' + local_path)
-        elif os.path.exists(os.getenv("HOMEPATH") + '/' + server_path):
-            os.chdir(os.getenv("HOMEPATH") + '/' + server_path)
+        if os.path.exists(os.getenv("HOME") + '/' + local_path):
+            os.chdir(os.getenv("HOME") + '/' + local_path)
+        elif os.path.exists(os.getenv("HOME") + '/' + server_path):
+            os.chdir(os.getenv("HOME") + '/' + server_path)
         else:
             raise Exception('Set work path error!')
     else:
@@ -57,10 +57,10 @@ def set_work_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
 
 def get_data_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
     if sys.platform == 'linux' or sys.platform == 'linux2':
-        if os.path.exists(os.getenv("HOMEPATH") + '/' + local_path):
-            return os.getenv("HOMEPATH") + '/' + local_path
-        elif os.path.exists(os.getenv("HOMEPATH") + '/' + server_path):
-            return os.getenv("HOMEPATH") + '/' + server_path
+        if os.path.exists(os.getenv("HOME") + '/' + local_path):
+            return os.getenv("HOME") + '/' + local_path
+        elif os.path.exists(os.getenv("HOME") + '/' + server_path):
+            return os.getenv("HOME") + '/' + server_path
         else:
             raise Exception('get data path error!')
     else:
