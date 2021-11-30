@@ -168,7 +168,6 @@ model.to(device)
 print('Loaded the pretrain NER_BERT model, epoch:', checkpoint['epoch'], 'valid acc:',
       checkpoint['valid_acc'], 'valid f1:', checkpoint['valid_f1'])
 
-model.to(device)
 evaluate(model, test_dataloader, batch_size, epoch, 'Test_set')
 
 model.eval()
