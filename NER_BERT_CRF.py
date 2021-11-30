@@ -80,7 +80,7 @@ device = torch.device("cuda:0" if cuda_yes else "cpu")
 print('Device:', device)
 
 # data_dir = os.path.join(get_data_dir(), 'NER_data/CoNLL2003/')
-data_dir = os.path.join('NER_data/CoNLL2003/')
+data_dir = './NER_data/CoNLL2003/'
 # "Whether to run training."
 do_train = True
 # "Whether to run eval on the dev set."
