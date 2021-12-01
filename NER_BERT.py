@@ -123,7 +123,7 @@ optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=war
                      t_total=total_train_steps)
 
 global_step_th = int(len(train_examples) / batch_size / gradient_accumulation_steps * start_epoch)
-for epoch in range(start_epoch, total_train_epochs + 1):
+for epoch in range(start_epoch, total_train_epochs):
     tr_loss = 0
     train_start = time.time()
     model.train()
