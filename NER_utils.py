@@ -36,10 +36,12 @@ def f1_score(y_true, y_pred):
 
 
 def ner_evaluation(true_label, predicts):
-    ignore_id = 2
-    report_dict = classification_report(true_label[true_label > ignore_id], predicts[predicts > ignore_id],
+    ignore_id = 3
+    ground_truth = true_label[true_label > ignore_id]
+    predictions = predicts[true_label > ignore_id]
+    report_dict = classification_report(ground_truth, predictions,
                                         digits=4, output_dict=True)
-    report = classification_report(true_label[true_label > ignore_id], predicts[predicts > ignore_id],
+    report = classification_report(ground_truth, predictions,
                                    digits=4)
     print(report)
     return report_dict['macro avg']['f1-score']
@@ -55,11 +57,11 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
         for batch in predict_dataloader:
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
-            print(input_ids)
-            print(input_mask)
-            print(segment_ids)
-            print(predict_mask)
-            print(label_ids)
+            # print(input_ids)
+            # print(input_mask)
+            # print(segment_ids)
+            # print(predict_mask)
+            # print(label_ids)
 
             if not use_crf:
                 out_scores = model(input_ids, segment_ids, input_mask)
@@ -71,8 +73,8 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
                 valid_predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
                 valid_label_ids = torch.masked_select(label_ids, predict_mask)
 
-            print(valid_predicted)
-            print(valid_label_ids)
+            # print(valid_predicted)
+            # print(valid_label_ids)
 
             all_preds.extend(valid_predicted.tolist())
             all_labels.extend(valid_label_ids.tolist())
@@ -80,9 +82,9 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
             correct += valid_predicted.eq(valid_label_ids).sum().item()
 
     test_acc = correct / total
-    print(np.array(all_labels).shape, '\n', np.array(all_preds).shape)
-    print(np.array(all_labels).min(), '\n', np.array(all_labels).max())
-    print(np.array(all_preds).min(), '\n', np.array(all_preds).max())
+    # print(np.array(all_labels).shape, '\n', np.array(all_preds).shape)
+    # print(np.array(all_labels).min(), '\n', np.array(all_labels).max())
+    # print(np.array(all_preds).min(), '\n', np.array(all_preds).max())
     f1 = ner_evaluation(np.array(all_labels), np.array(all_preds))
     return test_acc, f1
 
