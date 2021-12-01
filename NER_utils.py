@@ -36,9 +36,11 @@ def f1_score(y_true, y_pred):
 
 
 def ner_evaluation(true_label, predicts):
-
-    report_dict = classification_report(true_label[true_label > 3], predicts[predicts > 3], digits=4, output_dict=True)
-    report = classification_report(true_label[true_label > 3], predicts[predicts > 3], digits=4)
+    ignore_id = 2
+    report_dict = classification_report(true_label[true_label > ignore_id], predicts[predicts > ignore_id],
+                                        digits=4, output_dict=True)
+    report = classification_report(true_label[true_label > ignore_id], predicts[predicts > ignore_id],
+                                   digits=4)
     print(report)
     return report_dict['macro avg']['f1-score']
 
@@ -70,7 +72,7 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
             correct += valid_predicted.eq(valid_label_ids).sum().item()
 
     test_acc = correct / total
-    print(np.array(all_labels), '\n', np.array(all_preds))
+    print(np.array(all_labels).shape, '\n', np.array(all_preds).shape)
     f1 = ner_evaluation(np.array(all_labels), np.array(all_preds))
     return test_acc, f1
 
