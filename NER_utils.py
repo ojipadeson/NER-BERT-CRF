@@ -82,3 +82,19 @@ def warmup_linear(x, warmup=0.002):
     if x < warmup:
         return x / warmup
     return 1.0 - x
+
+
+def write_test(test_path, y_pred):
+    pred_count = 0
+    f_test = open('test_predict.txt', 'w')
+    for line in open(test_path, 'r'):
+        line = line.rstrip()
+        word = line.split()
+        if word:
+            new_line = '\t'.join([word[0], y_pred[pred_count]])
+            pred_count += 1
+        else:
+            new_line = ''
+        f_test.write(new_line)
+    f_test.close()
+    return

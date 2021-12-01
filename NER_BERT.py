@@ -11,7 +11,7 @@ from pytorch_pretrained_bert.optimization import BertAdam
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
 from NER_dataset import CoNLLDataProcessor, NerDataset
-from NER_utils import evaluate, warmup_linear
+from NER_utils import evaluate, warmup_linear, write_test
 from Config import cuda_yes, device, max_seq_length
 
 import warnings
@@ -39,7 +39,7 @@ learning_rate0 = 5e-5
 lr0_crf_fc = 8e-5
 weight_decay_finetune = 1e-5
 weight_decay_crf_fc = 5e-6
-total_train_epochs = 120
+total_train_epochs = 1
 gradient_accumulation_steps = 1
 warmup_proportion = 0.1
 output_dir = './output/'
@@ -123,7 +123,7 @@ optimizer = BertAdam(optimizer_grouped_parameters, lr=learning_rate0, warmup=war
                      t_total=total_train_steps)
 
 global_step_th = int(len(train_examples) / batch_size / gradient_accumulation_steps * start_epoch)
-for epoch in range(start_epoch, total_train_epochs):
+for epoch in range(start_epoch, total_train_epochs + 1):
     tr_loss = 0
     train_start = time.time()
     model.train()
@@ -188,17 +188,15 @@ with torch.no_grad():
                                        shuffle=False,
                                        num_workers=num_worker,
                                        collate_fn=NerDataset.pad)
+    pred_list = []
     for batch in demon_dataloader:
         batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
         out_scores = model(input_ids, segment_ids, input_mask)
         _, predicted = torch.max(out_scores, -1)
         valid_predicted = torch.masked_select(predicted, predict_mask)
-        for i in range(10):
-            print(predicted[i])
-            print(label_ids[i])
+        for i in range(predicted.shape[0]):
             new_ids = predicted[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
-            print(list(map(lambda i: label_list[i], new_ids)))
-            print(test_examples[i].labels)
-        break
+            pred_list.extend(list(map(lambda ix: label_list[ix], new_ids)))
+    write_test(data_dir + 'test.txt', pred_list)
 print(conllProcessor.get_label_map())
