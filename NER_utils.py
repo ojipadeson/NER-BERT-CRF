@@ -71,6 +71,9 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
                 valid_predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
                 valid_label_ids = torch.masked_select(label_ids, predict_mask)
 
+            print(valid_predicted)
+            print(valid_label_ids)
+
             all_preds.extend(valid_predicted.tolist())
             all_labels.extend(valid_label_ids.tolist())
             total += len(valid_label_ids)
