@@ -55,6 +55,11 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
         for batch in predict_dataloader:
             batch = tuple(t.to(device) for t in batch)
             input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
+            print(input_ids)
+            print(input_mask)
+            print(segment_ids)
+            print(predict_mask)
+            print(label_ids)
 
             if not use_crf:
                 out_scores = model(input_ids, segment_ids, input_mask)
