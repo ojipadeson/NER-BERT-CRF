@@ -73,8 +73,8 @@ def evaluate(model, predict_dataloader, batch_size, epoch_th, dataset_name, use_
 
     test_acc = correct / total
     print(np.array(all_labels).shape, '\n', np.array(all_preds).shape)
-    print(np.array(all_labels).min, '\n', np.array(all_labels).max)
-    print(np.array(all_preds).min, '\n', np.array(all_preds).max)
+    print(np.array(all_labels).min(), '\n', np.array(all_labels).max())
+    print(np.array(all_preds).min(), '\n', np.array(all_preds).max())
     f1 = ner_evaluation(np.array(all_labels), np.array(all_preds))
     return test_acc, f1
 
