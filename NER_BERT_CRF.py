@@ -11,11 +11,12 @@ from pytorch_pretrained_bert.optimization import BertAdam
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
 from NER_dataset import CoNLLDataProcessor, NerDataset
-from NER_utils import evaluate, warmup_linear
+from NER_utils import evaluate, warmup_linear, write_test
 from BERT_CRF_model import BERT_CRF_NER
 from Config import cuda_yes, device, max_seq_length
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 print('Python version ', sys.version)
@@ -209,16 +210,14 @@ with torch.no_grad():
                                        shuffle=False,
                                        num_workers=num_worker,
                                        collate_fn=NerDataset.pad)
+    pred_list = []
     for batch in demon_dataloader:
         batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
         _, predicted_label_seq_ids = model(input_ids, segment_ids, input_mask)
-        valid_predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
-        for i in range(10):
-            print(predicted_label_seq_ids[i])
-            print(label_ids[i])
-            new_ids = predicted_label_seq_ids[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
-            print(list(map(lambda i: label_list[i], new_ids)))
-            print(test_examples[i].labels)
-        break
+        predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
+        for i in range(predicted.shape[0]):
+            new_ids = predicted[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
+            pred_list.extend(list(map(lambda ix: label_list[ix], new_ids)))
+    write_test(data_dir + 'test.txt', pred_list)
 print(conllProcessor.get_label_map())

@@ -95,6 +95,6 @@ def write_test(test_path, y_pred):
             pred_count += 1
         else:
             new_line = ''
-        f_test.write(new_line)
+        f_test.write(new_line + '\n')
     f_test.close()
     return

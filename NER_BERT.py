@@ -189,6 +189,7 @@ with torch.no_grad():
                                        num_workers=num_worker,
                                        collate_fn=NerDataset.pad)
     pred_list = []
+    print(label_list)
     for batch in demon_dataloader:
         batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
