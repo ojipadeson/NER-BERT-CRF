@@ -15,6 +15,9 @@ from NER_utils import evaluate, warmup_linear
 from BERT_CRF_model import BERT_CRF_NER
 from Config import cuda_yes, device, max_seq_length
 
+import warnings
+warnings.filterwarnings("ignore")
+
 print('Python version ', sys.version)
 print('PyTorch version ', torch.__version__)
 

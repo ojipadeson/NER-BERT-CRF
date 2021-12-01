@@ -14,6 +14,9 @@ from NER_dataset import CoNLLDataProcessor, NerDataset
 from NER_utils import evaluate, warmup_linear
 from Config import cuda_yes, device, max_seq_length
 
+import warnings
+warnings.filterwarnings("ignore")
+
 print('Python version ', sys.version)
 print('PyTorch version ', torch.__version__)
 
@@ -180,12 +183,13 @@ with torch.no_grad():
     for batch in demon_dataloader:
         batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
-        _, predicted_label_seq_ids = model(input_ids, segment_ids, input_mask)
-        valid_predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
+        out_scores = model(input_ids, segment_ids, input_mask)
+        _, predicted = torch.max(out_scores, -1)
+        valid_predicted = torch.masked_select(predicted, predict_mask)
         for i in range(10):
-            print(predicted_label_seq_ids[i])
+            print(predicted[i])
             print(label_ids[i])
-            new_ids = predicted_label_seq_ids[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
+            new_ids = predicted[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
             print(list(map(lambda i: label_list[i], new_ids)))
             print(test_examples[i].labels)
         break
