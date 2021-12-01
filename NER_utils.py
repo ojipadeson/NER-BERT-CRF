@@ -39,12 +39,10 @@ def ner_evaluation(true_label, predicts):
     ignore_id = 3
     ground_truth = true_label[true_label > ignore_id]
     predictions = predicts[true_label > ignore_id]
-    unique, counts = np.unique(predictions, return_counts=True)
-    print(dict(zip(unique, counts)))
     report_dict = classification_report(ground_truth, predictions,
-                                        digits=4, output_dict=True)
+                                        digits=4, output_dict=True, labels=np.unique(ground_truth))
     report = classification_report(ground_truth, predictions,
-                                   digits=4)
+                                   digits=4, labels=np.unique(ground_truth))
     print(report)
     return report_dict['macro avg']['f1-score']
 

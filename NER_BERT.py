@@ -39,12 +39,13 @@ learning_rate0 = 5e-5
 lr0_crf_fc = 8e-5
 weight_decay_finetune = 1e-5
 weight_decay_crf_fc = 5e-6
-total_train_epochs = 15
+total_train_epochs = 120
 gradient_accumulation_steps = 1
 warmup_proportion = 0.1
 output_dir = './output/'
 bert_model_scale = 'bert-base-cased'
 do_lower_case = False
+patience = 10
 
 np.random.seed(44)
 torch.manual_seed(44)
@@ -92,6 +93,7 @@ test_dataloader = data.DataLoader(dataset=test_dataset,
 
 print('*** Use only BertForTokenClassification ***')
 
+epoch_no_improve = 0
 if load_checkpoint and os.path.exists(output_dir + '/ner_bert_checkpoint.pt'):
     checkpoint = torch.load(output_dir + '/ner_bert_checkpoint.pt', map_location='cpu')
     start_epoch = checkpoint['epoch'] + 1
@@ -146,8 +148,6 @@ for epoch in range(start_epoch, total_train_epochs):
             optimizer.zero_grad()
             global_step_th += 1
 
-        # print("Epoch:{}-{}/{}, CrossEntropyLoss: {} ".format(epoch, step, len(train_dataloader), loss.item()))
-
     print('--------------------------------------------------------------')
     print("Epoch:{} completed, Total training's Loss: {}, Spend: {}m".format(epoch, tr_loss,
                                                                              (time.time() - train_start) / 60.0))
@@ -157,6 +157,14 @@ for epoch in range(start_epoch, total_train_epochs):
                     'valid_f1': valid_f1, 'max_seq_length': max_seq_length, 'lower_case': do_lower_case},
                    os.path.join(output_dir, 'ner_bert_checkpoint.pt'))
         valid_f1_prev = valid_f1
+        epoch_no_improve = 0
+    else:
+        epoch_no_improve += 1
+        print('Epoch No Improve: {}'.format(epoch_no_improve))
+
+    if epoch_no_improve >= patience:
+        print('Early Stop')
+        break
 
 evaluate(model, test_dataloader, batch_size, total_train_epochs - 1, 'Test_set')
 

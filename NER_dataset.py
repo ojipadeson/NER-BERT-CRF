@@ -141,13 +141,10 @@ def example2feature(example, tokenizer, label_map, max_seq_length):
     predict_mask = [0]
     label_ids = [label_map['[CLS]']]
     for i, w in enumerate(example.words):
-        # print(w)
         sub_words = tokenizer.tokenize(w)
         if not sub_words:
             sub_words = ['[UNK]']
-        # print(sub_words)
         tokens.extend(sub_words)
-        # print(tokens)
         for j in range(len(sub_words)):
             if j == 0:
                 predict_mask.append(1)
@@ -155,7 +152,6 @@ def example2feature(example, tokenizer, label_map, max_seq_length):
             else:
                 predict_mask.append(0)
                 label_ids.append(label_map[add_label])
-            # print(predict_mask)
 
     if len(tokens) > max_seq_length - 1:
         print('Example No.{} is too long, length is {}, truncated to {}!'.format(example.guid, len(tokens),
@@ -166,12 +162,8 @@ def example2feature(example, tokenizer, label_map, max_seq_length):
     tokens.append('[SEP]')
     predict_mask.append(0)
     label_ids.append(label_map['[SEP]'])
-    # print(tokens)
-    # print(predict_mask)
-    # print(label_ids)
 
     input_ids = tokenizer.convert_tokens_to_ids(tokens)
-    # print(input_ids)
     segment_ids = [0] * len(input_ids)
     input_mask = [1] * len(input_ids)
 
