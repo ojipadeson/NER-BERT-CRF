@@ -1,10 +1,9 @@
 import numpy as np
-import time
 
 import torch
 from sklearn.metrics import classification_report
 
-from Config import device
+from NER_src.Config import device
 
 
 def f1_score(y_true, y_pred):

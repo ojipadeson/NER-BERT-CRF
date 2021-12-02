@@ -3,7 +3,7 @@ import numpy as np
 
 import torch
 from torch.utils import data
-from Config import max_seq_length
+from NER_src.Config import max_seq_length
 
 
 class InputExample(object):
