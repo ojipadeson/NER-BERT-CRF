@@ -1,4 +1,6 @@
 # NER implementation with BERT and CRF model
+
+### Modified from:
 > Zhibin Lu
 
 This is a named entity recognizer based on [BERT Model(pytorch-pretrained-BERT)](https://github.com/huggingface/pytorch-pretrained-BERT) and CRF.
@@ -30,20 +32,7 @@ The NER_BERT_CRF.py include 2 model:
 - total_train_epochs = 20
 - bert_model_scale = 'bert-base-cased'
 - do_lower_case = False
-### Performance
-- [Bert paper](https://arxiv.org/abs/1810.04805)
-  - F1-Score on valid data: 96.4 %
-  - F1-Score on test data: 92.4 %
-- BertForTokenClassification (epochs = 15)
-  - Accuracy on valid data: 99.10 %
-  - Accuracy on test data: 98.11 %
-  - F1-Score on valid data: 96.18 %
-  - F1-Score on test data: 92.17 %
-- Bert+CRF (epochs = 16)
-  - Accuracy on valid data: 99.10 %
-  - Accuracy of test data: 98.14 % 
-  - F1-Score on valid data: 96.23 %
-  - F1-Score on test data: 92.29 %
+
 ### References
 - [Bert paper](https://arxiv.org/abs/1810.04805)
 - [Bert with PyTorch implementation](https://github.com/huggingface/pytorch-pretrained-BERT)
