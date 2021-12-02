@@ -41,7 +41,7 @@ learning_rate0 = 5e-5
 lr0_crf_fc = 8e-5
 weight_decay_finetune = 1e-5
 weight_decay_crf_fc = 5e-6
-total_train_epochs = 120
+total_train_epochs = 1
 gradient_accumulation_steps = 1
 warmup_proportion = 0.1
 output_dir = './output/'
@@ -215,8 +215,8 @@ with torch.no_grad():
     for batch in demon_dataloader:
         batch = tuple(t.to(device) for t in batch)
         input_ids, input_mask, segment_ids, predict_mask, label_ids = batch
-        _, predicted_label_seq_ids = model(input_ids, segment_ids, input_mask)
-        predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
+        _, predicted = model(input_ids, segment_ids, input_mask)
+        # predicted = torch.masked_select(predicted_label_seq_ids, predict_mask)
         for i in range(predicted.shape[0]):
             new_ids = predicted[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
             pred_list.extend(list(map(lambda ix: label_list[ix], new_ids)))
