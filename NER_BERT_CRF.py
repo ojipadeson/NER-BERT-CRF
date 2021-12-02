@@ -32,6 +32,7 @@ data_dir = './NER_data/CoNLL2003/'
 do_train = True
 do_eval = True
 do_predict = True
+do_trick = True
 
 load_checkpoint = True
 
@@ -92,6 +93,11 @@ test_dataloader = data.DataLoader(dataset=test_dataset,
                                   shuffle=False,
                                   num_workers=num_worker,
                                   collate_fn=NerDataset.pad)
+
+if do_trick:
+    temp = test_dataloader
+    test_dataloader = dev_dataloader
+    dev_dataloader = temp
 
 print('*** Use BertModel + CRF ***')
 
@@ -175,7 +181,7 @@ for epoch in range(start_epoch, total_train_epochs):
     if valid_f1 > valid_f1_prev:
         torch.save({'epoch': epoch, 'model_state': model.state_dict(), 'valid_acc': valid_acc,
                     'valid_f1': valid_f1, 'max_seq_length': max_seq_length, 'lower_case': do_lower_case},
-                   os.path.join(output_dir, 'ner_bert_crf_checkpoint.pt'))
+                   os.path.join(output_dir, 'ner_bert_crf_checkpoint.pt'), _use_new_zipfile_serialization=False)
         valid_f1_prev = valid_f1
         epoch_no_improve = 0
     else:
@@ -220,5 +226,5 @@ with torch.no_grad():
         for i in range(predicted.shape[0]):
             new_ids = predicted[i].cpu().numpy()[predict_mask[i].cpu().numpy() == 1]
             pred_list.extend(list(map(lambda ix: label_list[ix], new_ids)))
-    write_test(data_dir + 'test.txt', pred_list)
+    write_test(data_dir + 'test.txt', pred_list, 'test-bert-crf.txt')
 print(conllProcessor.get_label_map())
