@@ -10,9 +10,9 @@ from pytorch_pretrained_bert.modeling import BertForTokenClassification
 from pytorch_pretrained_bert.optimization import BertAdam
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
-from NER_dataset import CoNLLDataProcessor, NerDataset
-from NER_utils import evaluate, warmup_linear, write_test
-from Config import cuda_yes, device, max_seq_length
+from NER_src.NER_dataset import CoNLLDataProcessor, NerDataset
+from NER_src.NER_utils import evaluate, warmup_linear, write_test
+from NER_src.Config import cuda_yes, device, max_seq_length
 
 import warnings
 warnings.filterwarnings("ignore")

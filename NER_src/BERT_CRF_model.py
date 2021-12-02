@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from pytorch_pretrained_bert.modeling import BertLayerNorm
 
-from CRF_utils import log_sum_exp_batch
-from Config import device
+from NER_src.CRF_utils import log_sum_exp_batch
+from NER_src.Config import device
 
 
 class BERT_CRF_NER(nn.Module):

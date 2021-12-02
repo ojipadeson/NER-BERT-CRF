@@ -11,7 +11,7 @@ def set_work_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
         else:
             raise Exception('Set work path error!')
     else:
-        os.chdir('C:\\FUDAN\\Grade4_1\\NLP\\Lab2\\ner_bert_crf')
+        os.chdir('/')
 
 
 def get_data_dir(local_path="ner_bert_crf", server_path="ner_bert_crf"):
