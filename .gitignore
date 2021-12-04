@@ -2,3 +2,4 @@
 /output/ner_bert_checkpoint.pt
 test_bert.py
 test_bert_crf.py
+/PJ_Report

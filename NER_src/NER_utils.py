@@ -6,34 +6,6 @@ from sklearn.metrics import classification_report
 from NER_src.Config import device
 
 
-def f1_score(y_true, y_pred):
-    ignore_id = 3
-
-    num_proposed = len(y_pred[y_pred > ignore_id])
-    num_correct = (np.logical_and(y_true == y_pred, y_true > ignore_id)).sum()
-    num_gold = len(y_true[y_true > ignore_id])
-
-    try:
-        precision = num_correct / num_proposed
-    except ZeroDivisionError:
-        precision = 1.0
-
-    try:
-        recall = num_correct / num_gold
-    except ZeroDivisionError:
-        recall = 1.0
-
-    try:
-        f1 = 2 * precision * recall / (precision + recall)
-    except ZeroDivisionError:
-        if precision * recall == 0:
-            f1 = 1.0
-        else:
-            f1 = 0
-
-    return precision, recall, f1
-
-
 def ner_evaluation(true_label, predicts):
     ignore_id = 3
     ground_truth = true_label[true_label > ignore_id]
@@ -83,14 +55,17 @@ def warmup_linear(x, warmup=0.002):
     return 1.0 - x
 
 
-def write_test(test_path, y_pred, writing_file):
+def write_test(test_path, y_pred, writing_file, write_value=None):
     pred_count = 0
     f_test = open(writing_file, 'w')
     for line in open(test_path, 'r'):
         line = line.rstrip()
         word = line.split()
         if word:
-            new_line = '\t'.join([word[0], y_pred[pred_count]])
+            if write_value is not None:
+                new_line = '\t'.join([word[0], y_pred[pred_count], str(write_value[pred_count])])
+            else:
+                new_line = '\t'.join([word[0], y_pred[pred_count]])
             pred_count += 1
         else:
             new_line = ''
